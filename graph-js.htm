@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru-RU">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Graph</title>
+
+<style type="text/css">
+.setting{
+   background-color: #999999;
+   position: fixed;
+   padding: 1px;
+   top: 10%;
+   left: 10%;
+   display: none;
+}
+.oneFunc{
+   background-color: #AAAACC;
+   padding: 10px;
+   margin: 5px;
+}
+.divHelp{
+   background-color: #CCCCCC;
+   position: fixed;
+   padding: 1px;
+   top: 10%;
+   left: 10%;
+   display: none;
+}
+
+.funcTxt{
+   background-color: #FFFFFF;
+   padding: 3px;
+   font-size: "larger";
+   margin: 2px;
+}
+.funcColor{
+   background-color: #FFFFFF;
+   padding: 3px;
+   font-size: "larger";
+   margin: 2px;
+}
+
+#divMenu{
+   position: fixed;
+}
+body{
+   background-color: #444444;
+   font-size: 1.3em;
+}
+button{
+   font-size: 1em;
+}
+</style>
+</head>
+<body>
+<div id="divMenu">
+<button id="btGraphs" onclick="btGraphs()">Graphs</button>
+<button id="btHelp" onclick="btHelp()">Help</button>
+</div>
+<div class="setting">
+Graphs. Here you can set several graphs to be drawn.<br>
+Formula and color are set for each graph<br>
+<button id="btadd" onclick="btAdd()">Add graph</button>
+<button id="btsave" onclick="btSave()">Save & close</button>
+<div class="listFunc"></div>
+</div>
+
+<div class="divHelp">Graph JS<br>
+<div id="english">
+This application draws graphs of functions.<br>
+Features:<br>
+<ul>
+<li>Draws multiple graphs with different colors<br>
+This data is stored in permanent memory (localStorage)<br>
+and is available the next time the application is launched.
+<li>Zoom in, zoom out (+ - keys on Numpad)<br>
+<li>Move left, right,up, down (cursor keys)<br>
+<li>Draws the derivative of a function (key D)<br>
+<li>Calculates a definite integral.<br>
+The integral value is displayed at the top left of <br>the screen under the letter S<br>
+Press key A to set the low limit of integral (default 0).<br>
+Press key B to set the up limit of integral (default 1).<br>
+Press key i to calculate and show integral<br>
+<li>Press key P Set pricision of plotting. <br>
+Number of points on the X-axis. Tthe default is 1000.<br>
+The more points, the more pricision the graph is.<br>
+But it takes more time to draw.<br>
+</ul>
+
+Author: Nechepurenko Sergey<br>
+Email: sergnech.sw@gmail.com<br>
+Phone/Whatsapp/Viber/Telegram: +972533586061
+</div>
+<div id="russian">
+Это приложение предназначено для построения графиков.<br>
+Возможности
+<ul>
+<li>Одновременно может быть построено несколько различных графиков.<br>
+Для добавления и изменения графиков нажмите кнопку Graphs.<br>
+Для каждого графика можно указать формулу и цвет.<br>
+Формулы и цвета графиков сохраняются в постоянном хранилище браузера (localStorage)<br>
+и сохраняются при последующем запуске приложения.
+<li>Кнопками + и – на цифровой клавиатуре можно увеличить или уменьшить масштаб.
+<li>Стрелками курсора можно перемещать график влево, вправо, вверх или вниз.
+<li>Нажатием клавиши D можно отобразить и скрыть <b>производную функции.</b><br>
+Производная вычисляется как приращение функции делить на приращение аргумента.
+<li>Нажатием клавиши i можно вычислить и отобразить <b>определенный интеграл</b> функции.<br>
+Значение интеграла отображается в верхней левой части экрана под буквой S<br>
+По умолчанию нижний предел интегрирования равен 0, а верхний равен 1.<br>
+Нажатием клавиши A можно изменить нижний предел интегрирования.<br>
+Нажатием клавиши B можно изменить верхний предел интегрирования.<br>
+Интеграл вычисляется как площадь криволинейной трапеции ограниченной графиком функции, <br>
+осью OX, нижним пределом интегрирования и верхним пределом.<br>
+Повторно нажатие клавиши i скрывает расчет интеграла.
+<li>Нажатием клавиши P можно задать точность построение графика.<br>
+Это количество точек используемых для построения.<br>
+По умодчанию используется 1000 точек для всего графика.<br>
+Увеличение количества точек приведет к более четкому построению, графика,<br>
+производной и более точному вычислению интеграла. Но увеличит время построения.
+</ul>   
+Об авторе.<br>
+Сергей Нечепуренко.<br>
+Email: sergnech.sw@gmail.com<br>
+Phone/Whatsapp/Viber/Telegram: +972533586061
+
+</div>
+<button onclick="btLangEng()">English</button>
+<button onclick="btLangRus()">Russian</button>
+
+<button id="btCloseHelp" onclick="btCloseHelp()">Close</button>
+</div>
+
+<script src="inpbox.js?v=2"></script>
+
+<script>
+'use strict'
+var c1 = document.createElement('canvas');
+document.body.appendChild(c1);
+let setting=document.querySelector('.setting');
+let listFunc=document.querySelector('.listFunc');
+
+var grWidth,grHeight
+var arFunc=[]  // array of function
+var editFunc,editColor
+var showD=false// show derivative
+var showI=false// show integral
+var lowLimit=0,upLimit=1
+var precision=1000
+
+function readFromStorage(){
+let len=localStorage.getItem("len")
+len=Number(len)
+arFunc=[]
+for (let i=0;i<len;i++){
+   let funcStr=localStorage.getItem("f"+i)
+   let funcColor=localStorage.getItem("c"+i)
+   let funcInfo={"txt": funcStr,"col":funcColor}
+   arFunc.push(funcInfo)
+}
+if (len==0){
+   let funcInfo={"txt": "x*x","col":"FF0000"}
+   arFunc.push(funcInfo)
+}
+
+}
+readFromStorage()
+
+function btLangEng(){
+   document.getElementById("english").style.display='block'
+   document.getElementById("russian").style.display='none'
+}
+function btLangRus(){
+   document.getElementById("english").style.display='none'
+   document.getElementById("russian").style.display='block'
+}
+document.getElementById("russian").style.display='none'
+
+function btHelp(){
+let hlp=document.querySelector('.divHelp')
+hlp.style.display='block'
+}
+function btCloseHelp(){
+   let hlp=document.querySelector('.divHelp')
+   hlp.style.display='none'
+}
+function btGraphs(){
+   setting.style.display='block'
+   while (listFunc.childElementCount)// delete all old functions
+      listFunc.children[0].remove()
+
+   for (let item of arFunc){// add all functions from Array to DOM
+      AddFunc(item)
+   }
+}
+
+function btSave(){//pressing the save button
+   let len=0      
+   let funcStr,funcColor
+   let el
+   arFunc=[]                           // array of function
+   for (let node of listFunc.childNodes){
+      if (node.className=='oneFunc'){
+         //funcStr=node.firstElementChild.innerText
+         funcStr=getElByName(node.childNodes,'funcTxt').innerText
+         funcColor=getElByName(node.childNodes,'funcColor').innerText
+         var funcInfo={"txt": funcStr,"col": funcColor}
+         arFunc.push(funcInfo)
+         localStorage.setItem("f"+len,funcStr)
+         localStorage.setItem("c"+len,funcColor)
+         console.log(funcStr)
+         len++
+      }
+   }
+localStorage.setItem("len",len)
+setting.style.display='none'
+
+drawGrid()
+drawAllFunc()
+}
+
+function btAdd(){
+   AddFunc( {
+      'txt':'x*x',
+      'col':'FF0000'} )
+}
+
+function getElByName(p,val){
+   for (let i in p){
+      if (p[i]['className']==val)
+         return p[i]
+   }
+}
+function AddFunc(func){
+   let oneFunc = document.createElement("div");   
+   oneFunc.classList.add('oneFunc')
+   listFunc.appendChild(oneFunc);
+
+   let funcTxt = document.createElement("div");
+   funcTxt.classList.add('funcTxt')
+   funcTxt.innerText=func['txt']
+   oneFunc.appendChild(funcTxt);
+
+   funcTxt.insertAdjacentHTML('beforebegin','Formula')
+
+   let selColor = document.createElement("div");
+   selColor.innerHTML='Color <FONT color="#'+func['col']+'">Selected color</FONT>'
+   oneFunc.appendChild(selColor);
+
+   let funcColor = document.createElement("div");
+   funcColor.classList.add('funcColor')
+   funcColor.innerText=func['col']
+   oneFunc.appendChild(funcColor);
+
+   let btEdit=document.createElement("button");
+   btEdit.innerText='Edit formula'   
+   oneFunc.appendChild(btEdit);
+   btEdit.addEventListener('click',function (p) {
+      let el=getElByName(this.parentElement.children,'funcTxt')
+      showInpBox(el.innerText,'Graph formula',
+      'Use JavaScript syntax in formula.<br>'+
+      'Examples<br>'+
+      'x*x<br>'+
+      '1/x<br>'+
+      'Math.sin(x)<br>'+
+      'Math.cos(x)<br>'+
+      'Math.tan(x)<br>'+
+      'Math.sqrt(x)<br>'      
+      )
+      editFunc=funcTxt;
+
+      ib_act=function(str){
+         editFunc.innerText=str
+      //   console.log('str='+str)
+      }      
+   })
+   
+   let btColor=document.createElement("button");
+   btColor.innerText='Select color'
+   oneFunc.appendChild(btColor);
+   btColor.addEventListener('click',function (p) {
+      let el=getElByName(this.parentElement.children,'funcColor')
+      showInpBox(el.innerText,'Enter color for graph','Format in HEX RRGGBB<br>'+
+      'Examples<br>'+
+      'FFFFFF White<br>'+
+      'FF0000 Red<br>'+
+      '00FF00 Green<br>'+
+      '0000FF Blue<br>'+
+      'FFFF00 Yellow<br>'+
+      'FF00FF Purple<br>'+
+      'FF00FF Cyan<br>'      
+      )
+      editFunc=funcColor
+      editColor=selColor
+      ib_act=function(str){
+         editFunc.innerText=str
+         selColor.innerHTML='Color <FONT color="#'+str+'">Selected color</FONT>'
+      //   console.log('str='+str)
+      }
+   })
+
+   let btDel=document.createElement("button");
+   btDel.innerText='Delete graph'
+   oneFunc.appendChild(btDel);
+   btDel.addEventListener('click',function (p) {
+      console.log(this.parentNode.remove())
+   })   
+}
+
+function setSize(){
+grWidth=document.documentElement.clientWidth-30
+grHeight=document.documentElement.clientHeight-20
+c1.width=grWidth
+c1.height=grHeight
+}
+var ctx= c1.getContext('2d');
+
+var 
+   minX=-5,maxX=5,
+   minY=-1,maxY;
+var scale // сколько пикселов в единице
+//var c = document.getElementById("myCanvas");
+
+//c.width=   window.innerWidth
+//c.heigth = window.innerHeight
+
+function x2scr(x){
+return (x-minX) * scale
+}
+
+function y2scr(y){
+return grHeight - (y - minY) * scale
+}
+
+function drawPoint(x,y){
+let posX=x2scr(x)
+let posY=y2scr(y)
+
+ctx.beginPath();
+ctx.arc(posX,posY,1,0,Math.PI*2,true)
+ctx.stroke();
+}
+
+function drawPointLine(x,y,posOy,col){
+let posX=x2scr(x)
+let posY=y2scr(y)
+
+ctx.strokeStyle = '#FFFF00'
+ctx.beginPath();
+ctx.moveTo(posX,posY)
+ctx.lineTo(posX,posOy)
+ctx.stroke();
+
+ctx.strokeStyle = '#'+col
+ctx.beginPath();
+ctx.arc(posX,posY,1,0,Math.PI*2,true)
+ctx.stroke();
+}
+
+window.addEventListener('resize', function() {
+setSize()
+drawGrid()
+drawAllFunc()
+}
+)
+
+document.addEventListener('keydown', function(event) {
+if (inputVisible)
+   return
+var change=false
+console.log(event.keyCode)
+let dd=(maxX - minX)/10
+if (event.keyCode==38){// ^
+      minY-=dd
+      change=true
+   }
+else if (event.keyCode==37){// <-
+      minX+=dd
+      maxX+=dd
+      change=true
+   }
+else if (event.keyCode==39){// ->
+      minX-=dd
+      maxX-=dd
+      change=true
+   }
+else if (event.keyCode==40){// v
+      minY+=dd
+      change=true
+   }
+else if (event.keyCode==65){// A
+      ib_act=function(str){
+         lowLimit=Number(str)
+         drawGrid()
+         drawAllFunc()
+      }
+      showInpBox(lowLimit,'Enter Low limit for integral','')
+   }
+else if (event.keyCode==66){// B
+      ib_act=function(str){
+         upLimit=Number(str)
+         drawGrid()
+         drawAllFunc()
+      }
+      showInpBox(upLimit,'Enter up limit for integral','')
+   }
+else if (event.keyCode==68){// D
+      showD=!showD
+      change=true
+   }
+else if (event.keyCode==73){// I
+      showI=!showI
+      change=true
+   }
+else if (event.keyCode==80){// P precision
+      ib_act=function(str){
+         precision=Number(str)
+         drawGrid()
+         drawAllFunc()
+      }
+      showInpBox(precision,'Enter precision','')
+   }
+else if (event.keyCode==109){// -
+      minX-=dd
+      maxX+=dd
+      minY-=dd
+      change=true
+   }
+else if (event.keyCode==107)  {// +
+      minX+=dd
+      maxX-=dd
+      minY+=dd
+      change=true
+   }
+
+if (change){
+      drawGrid()
+      drawAllFunc()
+   }
+
+});
+
+function drawGrid(){
+const lenG=maxX - minX
+scale= grWidth / lenG;// сколько пикселов в единице
+maxY=minY+grHeight / scale
+
+const horPos=y2scr(0)          //координата горизонтальной оси
+const vertPos=x2scr(0)         //координата вертикальной оси
+
+ctx.fillStyle="#000000"
+ctx.fillRect(0, 0, grWidth, grHeight)
+
+ctx.lineWidth = 1
+ctx.strokeStyle = "#666666"
+
+let pos
+ctx.fillStyle = "white";
+ctx.font = "14px sans-serif";
+
+if ((lenG>1) && (lenG<50)){
+   let x=Math.ceil(minX)   //рисуем вертикальные линии
+   ctx.setLineDash([3, 5]);
+   while (x<maxX){
+      pos=x2scr(x)
+//      console.log(x + ' ' + pos)
+      ctx.moveTo(pos,0);
+      ctx.lineTo(pos,grHeight);
+      ctx.stroke();
+      ctx.fillText(x, pos+2, horPos-2);
+      x+=1
+   }
+
+   let y=Math.ceil(minY)   //рисуем горизонтальные линии
+   while (y<maxY){
+      pos=y2scr(y)
+      ctx.moveTo(0,pos);
+      ctx.lineTo(grWidth,pos);
+      ctx.stroke();
+      ctx.fillText(y, vertPos+2, pos-2);
+      y+=1
+   }   
+}
+
+ctx.strokeStyle = "#FFFFFF"
+ctx.beginPath();     
+ctx.setLineDash([]);
+
+ctx.moveTo(0,  horPos);
+ctx.lineTo(grWidth, horPos );  //рисуем горизонтаотную ось
+
+
+ctx.moveTo(vertPos, 0 );
+ctx.lineTo(vertPos,grHeight);//рисуем вертикальную ось
+ctx.stroke();
+}
+
+function drawAllFunc(){
+let ff=true
+for(let f of arFunc){
+   drawFunc(f,ff)
+   ff=false
+}
+}
+
+function drawFunc(f,ff){
+ctx.strokeStyle = '#'+f['col']
+let x=minX
+let dx=(maxX-minX)/precision
+let res,resOld,dy,pr
+let s=0
+let posOy=y2scr(0)
+while (x<maxX){
+   res=eval(f['txt'])
+   
+   if (showI && ff){
+      if ((x>=lowLimit)&&(x<=upLimit)){
+         drawPointLine(x,res,posOy,f['col'])
+         s=s+res*dx
+      }else
+         drawPoint(x,res)
+   }else{
+      drawPoint(x,res)
+   }
+
+   if (showD){
+      dy=res-resOld
+      pr=dy/dx
+      drawPoint(x,pr)   //derivative
+      resOld=res
+   }
+
+   x=x+dx
+}
+
+if (showI && ff){
+   ctx.fillStyle="#FFFF00"
+   ctx.font = "20px sans-serif";
+   s=Math.round(s*10000)/10000
+   ctx.fillText('S='+s+ ' (Low limit='+lowLimit+' Up limit='+upLimit+' )', 200, 30);
+}
+
+}
+setSize()
+drawGrid()
+drawAllFunc()
+</script>
+</body>
+</html>
