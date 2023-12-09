@@ -1,5 +1,5 @@
 var ib_act
-var inputVisible=false
+var inputVisible=false//глобальная переменная, показывает виден ли элемент ввода
 
 var ib_overlay = document.createElement('div')
 document.body.appendChild(ib_overlay)
@@ -16,8 +16,8 @@ var ib_box = document.createElement('div')
 document.body.appendChild(ib_box)
 ib_box.style.backgroundColor='#cccccc'
 //ib_box.style.position='fixed'
-ib_box.style.top='30%'
-ib_box.style.left='30%'
+ib_box.style.top='10%'
+ib_box.style.left='20%'
 ib_box.style.padding='5px'
 ib_box.style.position='fixed'
 ib_box.style.zIndex='20'
@@ -39,19 +39,22 @@ ib_button.addEventListener('click',function () {
     ib_overlay.style.display='none'
     ib_box.style.display='none'
     ib_act(ib_input.value)
-    inputVisible=false
+    inputVisible=false//глобальная переменная, показывает виден ли элемент ввода
 })
 
 var ib_bottom = document.createElement('div')
 ib_box.appendChild(ib_bottom)
 
-function showInpBox(txt,title,bottom){
-    inputVisible=true
+function showInpBox(
+	txt,//значение по умолчанию
+	title,//заголовок
+	bottom)//текст внизу окна
+{   inputVisible=true//глобальная переменная, показывает виден ли элемент ввода
     ib_input.value=txt
     ib_title.innerHTML=title
     ib_bottom.innerHTML=bottom
 //    ib_box.insertAdjacentHTML('afterbegin',title+'<br>')
 //    ib_box.insertAdjacentHTML('beforeend','<br>'+bottom)
-    ib_box.style.display='block'
-    ib_overlay.style.display='block'
+    ib_box.style.display='block'		//показать окно ввода
+    ib_overlay.style.display='block'	//показать затеняющий фон
 }
